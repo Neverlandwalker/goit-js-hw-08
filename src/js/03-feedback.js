@@ -1,44 +1,36 @@
-import throttle from "lodash.throttle";
-const STORAGE_KEY = 'feedback-form-state';
-const formData = {};
+import throttle from 'lodash.throttle';
+
+import { save, load, remove } from './storage';
 
 const refs = {
-    formEl: document.querySelector('.feedback-form'),
-    formEmail: document.querySelector('.feedback-form input'),
-    formText: document.querySelector('.feedback-form textarea'),
-    formSubmit: document.querySelector('.feedback-form button')
+  form: document.querySelector('.feedback-form'),
+};
+
+refs.form.addEventListener('input', throttle(onFormClick, 1000));
+refs.form.addEventListener('submit', onFormSubmit);
+
+const loadedObj = load('feedback-form-state');
+if (loadedObj) {
+  Object.entries(loadedObj).forEach(([name, value]) => {
+    refs.form.elements[name].value = value;
+  });
 }
 
-refs.formEl.addEventListener('submit', onFormSubmit);
-refs.formEmail.addEventListener('input', onEmailInput);
-refs.formText.addEventListener('input', throttle(onTextInput, 1000));
-refs.formSubmit.addEventListener('click', onSubmitClick)
+function onFormClick(evt) {
+  const { name, value } = evt.target;
+  let formObj = load('feedback-form-state');
+  formObj = formObj || {};
+  formObj[name] = value;
+  save('feedback-form-state', formObj);
+}
 
-populateTextArea();
 function onFormSubmit(evt) {
-    evt.preventDefault();
+  evt.preventDefault();
+
+  let formObj = load('feedback-form-state');
+  if (formObj) {
+    console.log(formObj);
     evt.currentTarget.reset();
-    localStorage.removeItem(STORAGE_KEY);
-    formData = {};
-}
-
-function onEmailInput(evt) {
-    
-}
-
-function onTextInput(evt) {
-    formData[evt.target.name] = evt.target.value; 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-    
-}
-
-
-function populateTextArea(evt) {
-    const savedMessage = localStorage.getItem(STORAGE_KEY);
-
-
-    if (savedMessage) {
-        refs.formText.value = formData.message || '';
-        refs.formEmail.value = formData.email || '';
-    }
+    remove('feedback-form-state');
+  }
 }
